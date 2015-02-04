@@ -44,6 +44,7 @@ interface IndicatorPluginInterface {
    const CATEGORY_RISK      = 'Risk';
    const CATEGORY_ACTIVITY  = 'Activity';  // LoadPerUser, LoadPerJob?
    const CATEGORY_ADMIN     = 'Admin';     // CodevTT usage statistics, ConsistencyChecks, ...
+   const CATEGORY_IMPORT    = 'Import';
 
    /**
     * Short name (title)
