@@ -14,7 +14,7 @@
 class ImportIssueCsvBasic  extends IndicatorPluginAbstract {
 
 
-   //const OPTION_IS_DATE_DISPLAYED = 'isDateDisplayed';
+   const OPTION_CSV_FILENAME = 'csvFilename';
 
    private static $logger;
    private static $domains;
@@ -27,7 +27,7 @@ class ImportIssueCsvBasic  extends IndicatorPluginAbstract {
    private $selectedProject;
 
    // config options from Dashboard
-   // none.
+   private $csvFilename;
 
    // internal
    protected $execData;
@@ -42,9 +42,11 @@ class ImportIssueCsvBasic  extends IndicatorPluginAbstract {
 
       self::$domains = array (
          self::DOMAIN_IMPORT_EXPORT,
+         self::DOMAIN_TEAM, // TODO for debug only
       );
       self::$categories = array (
-         self::CATEGORY_IMPORT
+         //self::CATEGORY_IMPORT
+         self::CATEGORY_TEAM // TODO for debug only
       );
    }
 
@@ -79,14 +81,15 @@ class ImportIssueCsvBasic  extends IndicatorPluginAbstract {
    }
    public static function getJsFiles() {
       return array(
-         //'js_min/datepicker.min.js',
+         'js_min/datepicker.min.js',
+         'js_min/editable.min.js',
+         'lib/datatables/media/js/jquery.dataTables.min.js'
       );
    }
 
-
    /**
     *
-    * @param \PluginDataProviderInterface $pluginMgr
+    * @param \PluginDataProviderInterface $pluginDataProv
     * @throws Exception
     */
    public function initialize(PluginDataProviderInterface $pluginDataProv) {
@@ -106,9 +109,11 @@ class ImportIssueCsvBasic  extends IndicatorPluginAbstract {
          $this->selectedProject = $pluginDataProv->getParam(PluginDataProviderInterface::PARAM_PROJECT_ID);
       } else {
          $this->selectedProject = 0;
+         //throw new Exception("Missing parameter: ".PluginDataProviderInterface::PARAM_PROJECT_ID);
       }
 
       // set default pluginSettings
+      $this->csvFilename = NULL;
    }
 
    /**
@@ -122,6 +127,9 @@ class ImportIssueCsvBasic  extends IndicatorPluginAbstract {
          // override default with user preferences
          if (array_key_exists(PluginDataProviderInterface::PARAM_PROJECT_ID, $pluginSettings)) {
             $this->selectedProject = $pluginSettings[PluginDataProviderInterface::PARAM_PROJECT_ID];
+         }
+         if (array_key_exists(self::OPTION_CSV_FILENAME, $pluginSettings)) {
+            $this->csvFilename = $pluginSettings[self::OPTION_CSV_FILENAME];
          }
       }
    }
@@ -140,13 +148,138 @@ class ImportIssueCsvBasic  extends IndicatorPluginAbstract {
       return true;
    }
 
+   /**
+    * 
+    * @return string the filename of the uploaded CSV file.
+    * @throws Exception
+    */
+   public static function getSourceFile() {
+      
+      if (isset($_FILES['uploaded_csv'])) {
+         $filename = $_FILES['uploaded_csv']['name'];
+         $tmpFilename = $_FILES['uploaded_csv']['tmp_name'];
+
+         $err_msg = NULL;
+
+         if ($_FILES['uploaded_csv']['error']) {
+            $err_id = $_FILES['uploaded_csv']['error'];
+            switch ($err_id){
+               case 1:
+                  $err_msg = "UPLOAD_ERR_INI_SIZE ($err_id) on file : ".$filename;
+                  //echo"Le fichier dépasse la limite autorisée par le serveur (fichier php.ini) !";
+                  break;
+               case 2:
+                  $err_msg = "UPLOAD_ERR_FORM_SIZE ($err_id) on file : ".$filename;
+                  //echo "Le fichier dépasse la limite autorisée dans le formulaire HTML !";
+                  break;
+               case 3:
+                  $err_msg = "UPLOAD_ERR_PARTIAL ($err_id) on file : ".$filename;
+                  //echo "L'envoi du fichier a été interrompu pendant le transfert !";
+                  break;
+               case 4:
+                  $err_msg = "UPLOAD_ERR_NO_FILE ($err_id) on file : ".$filename;
+                  //echo "Le fichier que vous avez envoyé a une taille nulle !";
+                  break;
+            }
+            self::$logger->error($err_msg);
+         } else {
+            // $_FILES['nom_du_fichier']['error'] vaut 0 soit UPLOAD_ERR_OK
+            // ce qui signifie qu'il n'y a eu aucune erreur
+         }
+
+         $extensions = array('.csv', '.CSV');
+         $extension = strrchr($filename, '.');
+         if(!in_array($extension, $extensions)) {
+            $err_msg = T_('Please upload files with the following extension: ').implode(', ', $extensions);
+            self::$logger->error($err_msg);
+         }
+         
+      } else {
+         $err_msg = "no file to upload.";
+         self::$logger->error($err_msg);
+         self::$logger->error('$_FILES='.  var_export($_FILES, true));
+      }
+      if (NULL !== $err_msg) {
+         throw new Exception($err_msg);
+      }
+      return $tmpFilename;
+   }
+   
+   /**
+    * @param string $filename
+    * @param string $delimiter
+    * @param string $enclosure
+    * @param string $escape
+    * @return mixed[]
+    */
+   private function getIssuesFromCSV($filename, $delimiter = ';', $enclosure = '"', $escape = '"') {
+      $issues = array();
+
+      $file = new SplFileObject($filename);
+      /* Can't be use with PHP 5.1
+      $file->setFlags(SplFileObject::READ_CSV);
+      $file->setCsvControl($delimiter,$enclosure,$escape);
+      foreach ($file as $row) {
+         var_dump($row);
+      }
+      */
+      $row = 0;
+      while (!$file->eof()) {
+         while ($data = $file->fgetcsv($delimiter,$enclosure)) {
+            $row++;
+            if (1 == $row) { continue; } // skip column names
+
+            // $data[0] contains 'summary' which is the only mandatory field
+            if ('' != $data[0]) {
+               $newIssue = array();
+               $newIssue['lineNum'] = $row;
+               $newIssue['summary'] = Tools::convertToUTF8($data[0]);
+               $newIssue['mgrEffortEstim'] = str_replace(",", ".", Tools::convertToUTF8($data[1])); // 3,5 => 3.5
+               $newIssue['effortEstim'] = str_replace(",", ".", Tools::convertToUTF8($data[2])); // 3,5 => 3.5
+               $newIssue['description'] = Tools::convertToUTF8($data[3]);
+               $newIssue['deadline'] = Tools::convertToUTF8($data[4]);  // YYYY-MM-DD
+               $newIssue['extRef'] = Tools::convertToUTF8($data[5]);
+               //$newIssue['summary_attr'] = "style='background-color: #FF82B4;'";
+               $issues[] = $newIssue;
+            }
+         }
+      }
+      return $issues;
+   }
+   
   /**
     *
     */
    public function execute() {
 
-      $this->execData = array (
-         );
+      $this->execData = array ();
+      
+      $isAccessGranted = $this->isAccessGranted();
+      if ($isAccessGranted) {
+         try {
+            
+            $team = TeamCache::getInstance()->getTeam($this->teamid);
+            // exclude noStatsProjects and disabled projects
+            $this->execData['projects'] = $team->getProjects(false, false);
+            
+            // if file is defined
+            if (!empty($this->csvFilename)) {
+               
+               // read CSV file
+               $issues =      $this->getIssuesFromCSV($this->csvFilename);
+
+               // set GLOBAL VALUES BUTTONS
+            
+            }
+            
+            
+
+         } catch (Exception $e) {
+            $this->execData['errorMsg'] = $e->getMessage();
+         }
+      } else {
+         $this->execData['accessDenied'] = TRUE;
+      }      
       return $this->execData;
    }
 
@@ -156,12 +289,40 @@ class ImportIssueCsvBasic  extends IndicatorPluginAbstract {
     * @return array
     */
    public function getSmartyVariables($isAjaxCall = false) {
+/*
+      $this->smartyHelper->assign('projectid', $projectid);
+      if (0 != $projectid) {
+         $proj = ProjectCache::getInstance()->getProject($projectid);
+         $this->smartyHelper->assign('projectName', $proj->getName());
+      }
 
-      $smartyVariables = array(
-         'importIssueCsvBasic_greetings' => $this->execData['greetings'],
+      $this->smartyHelper->assign('teams', SmartyTools::getSmartyArray($teamList,$this->teamid));
+      // exclude noStatsProjects and disabled projects
+      $this->smartyHelper->assign('projects', SmartyTools::getSmartyArray($team->getProjects(false, false),$projectid));
+               $this->smartyHelper->assign('newIssues', $this->getIssuesFromCSV($tmpFilename));
+                  $this->smartyHelper->assign('filename', $filename);
 
-         // add pluginSettings (if needed by smarty)
-      );
+                  $this->smartyHelper->assign('commandList', $smartyCmdList);
+                  $this->smartyHelper->assign('categoryList', SmartyTools::getSmartyArray($projectCategories, 0));
+                  $this->smartyHelper->assign('targetversionList', SmartyTools::getSmartyArray($projectTargetVersion, 0));
+                  $this->smartyHelper->assign('userList', SmartyTools::getSmartyArray($activeMembers, 0));
+
+                  $this->smartyHelper->assign('jed_commandList', Tools::array2json($commands));
+                  $this->smartyHelper->assign('jed_categoryList', Tools::array2json($projectCategories));
+                  $this->smartyHelper->assign('jed_targetVersionList', Tools::array2json($projectTargetVersion));
+                  $this->smartyHelper->assign('jed_userList', Tools::array2json($activeMembers));
+      
+*/      
+      
+      $smartyVariables = array();
+      
+      if (array_key_exists('errorMsg', $this->execData)) {
+         $smartyVariables['importIssueCsvBasic_errorMsg'] = $this->execData['errorMsg'];
+         return $smartyVariables;
+      }
+      
+      $smartyVariables['importIssueCsvBasic_projects'] = SmartyTools::getSmartyArray($this->execData['projects'],$this->selectedProject);
+      
 
       if (false == $isAjaxCall) {
          $smartyVariables['importIssueCsvBasic_ajaxFile'] = self::getSmartySubFilename();

@@ -1,0 +1,86 @@
+<div class="ImportIssueCsvBasic">
+{if (isset($accessDenied) && (1 == $accessDenied)) }
+<p class="center ui-state-error-text">{t}You need to be manager to import issues.{/t}</p>
+{else}
+<div class="pluginInitFunction"  style="display: none;">importIssueCsvBasicJsInit</div>
+   
+<div align="left" style="margin-top:1em;">
+   <!-- CSV FILE SELECTION -->
+   <form method="post" action="{$importIssueCsvBasic_ajaxPhpURL}" enctype="multipart/form-data" class="importIssueCsvBasic_formUploadFile">
+      <fieldset>
+         <label>{t}Project{/t}: </label>
+         <select name="projectid">
+            {foreach from=$importIssueCsvBasic_projects key=id item=i}
+            <option {if $i.selected}selected="selected"{/if} value="{$i.id}">{$i.name}</option>
+            {/foreach}
+         </select>
+         <input type="file" name="uploaded_csv" accept=".csv, text/csv, application/csv, text/comma-separated-values" />
+         <input type="submit" class="importIssueCsvBasic_btUpload" value="{t}Preview import{/t}" />
+         <input type="hidden" name="MAX_FILE_SIZE" value="2097152" />
+         <input type="hidden" name="action" value="" />
+      </fieldset>
+   </form>
+</div>
+
+{if isset($importIssueCsvBasic_errorMsg)}
+<div style="margin-top:1em;">
+   <span class="ui-state-error-text">ERROR: {$importIssueCsvBasic_errorMsg}</span>
+</div>
+{else}
+   <hr>
+   <div class="importIssueCsvBasic_htmlContent">
+   </div>
+{/if}
+
+
+<script type="text/javascript">
+   
+   // this function will be run at jQuery(document).ready (see dashboard.html)
+   // or when a new widget is added to the dashboard.
+   function importIssueCsvBasicJsInit() {
+      
+      jQuery(".importIssueCsvBasic_btUpload").click(function(event) {
+         /* stop form from submitting normally */
+         event.preventDefault();
+
+         // check fields
+         var foundError = 0;
+         var msgString = "{t}Some fields are missing:{/t}\n\n";
+
+         var form = jQuery(".importIssueCsvBasic_formUploadFile");
+
+         if (0 == form.find("input[name=projectid]").val()) {
+            msgString += "{t}Project{/t}\n";
+            ++foundError;
+         }
+         if (0 == form.find("input[name=uploaded_csv]").val()) {
+            msgString += "{t}File{/t}\n";
+            ++foundError;
+         }
+         if (0 != foundError) {
+            alert(msgString);
+         } else {
+            form.find('input[name=action]').val("uploadCsvFile");
+            jQuery.ajax({
+               async: false,
+               type: form.attr('method'),
+               url: form.attr('action'),
+               dataType:"json",
+               data: form.serialize(),
+               success: function(data) {
+                  jQuery(".importIssueCsvBasic_htmlContent").html(jQuery.trim(data['importIssueCsvBasic_htmlContent']));
+               },
+               error: function(jqXHR, textStatus, errorThrown) {
+                  if(errorThrown == 'Forbidden') {
+                     window.location = '{$page}';
+                  }
+               }
+            });
+         }
+      });
+      
+      
+   };
+</script>
+{/if}
+</div>
