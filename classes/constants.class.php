@@ -107,6 +107,23 @@ class Constants {
        'CommandSet' => 'LoadPerUserIndicator',
        'ServiceContract' => 'LoadPerJobIndicator2,ProgressHistoryIndicator2,EffortEstimReliabilityIndicator2',
    );
+
+   // ---EMAIL---
+   const PHPMAILER_METHOD_MAIL = 0;
+   const PHPMAILER_METHOD_SENDMAIL = 1;
+   const PHPMAILER_METHOD_SMTP = 2;
+
+   public static $emailSettings = array(
+      enable_email_notification => 0,  // default is disabled
+      phpMailer_method => self::PHPMAILER_METHOD_SMTP,
+      smtp_host => "00.00.00.00",
+      from_name => "CodevTT",
+      from_email => "noreply@yourdomain.com",
+      administrator_email => "codevtt.admin@yourdomain.com",
+      webmaster_email => "webmaster@yourdomain.com",
+      return_path_email => "mantis.admin@yourdomain.com",
+   );
+
    
    /**
     * If true, then no info/warning messages will be displayed.
@@ -235,6 +252,25 @@ class Constants {
          }
       }
 
+      $emailSettings = $ini_array['email'];
+      if (is_array($emailSettings)) {
+         foreach ($emailSettings as $key => $val) {
+
+            if ('phpMailer_method' === $key) {
+               switch ($val) {
+                  case 'PHPMAILER_METHOD_MAIL':
+                     self::$emailSettings[$key] = self::PHPMAILER_METHOD_MAIL;
+                  case 'PHPMAILER_METHOD_SENDMAIL':
+                     self::$emailSettings[$key] = self::PHPMAILER_METHOD_SENDMAIL;
+                  case 'PHPMAILER_METHOD_SMTP':
+                     self::$emailSettings[$key] = self::PHPMAILER_METHOD_SMTP;
+               }
+            } else {
+               self::$emailSettings[$key] = $val;
+            }
+         }
+      }
+
       // -----
 
       /* FIXME WORKAROUND: SQL procedures still use codev_config_table.bug_resolved_status_threshold ! */
@@ -318,6 +354,24 @@ class Constants {
          $dashboards[$key] = implode(',', $value);
       }
       
+      $emailSettings = array();
+      $emailSettings[] = '; --- cronjob (every Friday at 2:00 AM):  0 2 * * 5 php /var/www/html/codevtt/tools/send_timetrack_emails.php';
+      $emailSettings[] = '; --- phpMailer_methods: PHPMAILER_METHOD_MAIL, PHPMAILER_METHOD_SENDMAIL, PHPMAILER_METHOD_SMTP';
+      foreach (self::$emailSettings as $key => $val) {
+
+         if ('phpMailer_method' === $key) {
+            switch ($val) {
+               case self::PHPMAILER_METHOD_MAIL:
+                  $emailSettings[$key] = 'PHPMAILER_METHOD_MAIL';
+               case self::PHPMAILER_METHOD_SENDMAIL:
+                  $emailSettings[$key] = 'PHPMAILER_METHOD_SENDMAIL';
+               case self::PHPMAILER_METHOD_SMTP:
+                  $emailSettings[$key] = 'PHPMAILER_METHOD_SMTP';
+            }
+         } else {
+            $emailSettings[$key] = $val;
+         }
+      }
       
       $ini_array = array();
       $ini_array[] = '; This file is part of CodevTT.';
@@ -347,6 +401,7 @@ class Constants {
       $ini_array[] = '';
       $ini_array['dashboardDefaultPlugins'] = $dashboards;
       $ini_array[] = '';
+      $ini_array['email'] = $emailSettings;
       $ini_array[] = '';
 
       return Tools::write_php_ini($ini_array, $file);
@@ -358,4 +413,4 @@ class Constants {
 Constants::staticInit();
 Constants::parseConfigFile();
 
-?>
+

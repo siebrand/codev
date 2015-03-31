@@ -71,9 +71,22 @@ check_latest_version = 1
 [dashboardDefaultPlugins]
 ;User = ""
 ;Task = ""
-Team = "AvailableWorkforceIndicator"
 ;Project = ""
+Team = "AvailableWorkforceIndicator"
 Command = "LoadPerUserIndicator,ProgressHistoryIndicator2"
 CommandSet = "LoadPerUserIndicator"
 ServiceContract = "LoadPerJobIndicator2,ProgressHistoryIndicator2,EffortEstimReliabilityIndicator2"
+
+[email]
+; --- cronjob (every Friday at 2:00 AM):  0 2 * * 5 php /var/www/html/codevtt/tools/send_timetrack_emails.php
+; --- phpMailer_methods: PHPMAILER_METHOD_MAIL, PHPMAILER_METHOD_SENDMAIL, PHPMAILER_METHOD_SMTP
+enable_email_notification = 1
+phpMailer_method = "PHPMAILER_METHOD_SMTP"
+smtp_host = "00.00.00.00"
+from_name = "CodevTT"
+from_email = "noreply@yourdomain.com"
+administrator_email = "codevtt.admin@yourdomain.com"
+webmaster_email = "webmaster@yourdomain.com"
+return_path_email = "mantis.admin@yourdomain.com"
+
 
