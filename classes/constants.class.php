@@ -109,19 +109,22 @@ class Constants {
    );
 
    // ---EMAIL---
-   const PHPMAILER_METHOD_MAIL = 0;
-   const PHPMAILER_METHOD_SENDMAIL = 1;
-   const PHPMAILER_METHOD_SMTP = 2;
+   const PHPMAILER_METHOD_MAIL = 'PHPMAILER_METHOD_MAIL';
+   const PHPMAILER_METHOD_SENDMAIL = 'PHPMAILER_METHOD_SENDMAIL';
+   const PHPMAILER_METHOD_SMTP = 'PHPMAILER_METHOD_SMTP';
 
    public static $emailSettings = array(
-      enable_email_notification => 0,  // default is disabled
-      phpMailer_method => self::PHPMAILER_METHOD_SMTP,
-      smtp_host => "00.00.00.00",
-      from_name => "CodevTT",
-      from_email => "noreply@yourdomain.com",
-      administrator_email => "codevtt.admin@yourdomain.com",
-      webmaster_email => "webmaster@yourdomain.com",
-      return_path_email => "mantis.admin@yourdomain.com",
+      'enable_email_notification' => 0,  // default is disabled
+      'phpMailer_method' => self::PHPMAILER_METHOD_SMTP,
+      'smtp_host' => "00.00.00.00",
+      #'smtp_port' => "0",
+      #'smtp_username' => "user",
+      #'smtp_password' => "password",
+      'from_name' => "CodevTT",
+      'from_email' => "noreply@yourdomain.com",
+      'administrator_email' => "codevtt.admin@yourdomain.com",
+      'webmaster_email' => "webmaster@yourdomain.com",
+      'return_path_email' => "mantis.admin@yourdomain.com",
    );
 
    
@@ -255,19 +258,7 @@ class Constants {
       $emailSettings = $ini_array['email'];
       if (is_array($emailSettings)) {
          foreach ($emailSettings as $key => $val) {
-
-            if ('phpMailer_method' === $key) {
-               switch ($val) {
-                  case 'PHPMAILER_METHOD_MAIL':
-                     self::$emailSettings[$key] = self::PHPMAILER_METHOD_MAIL;
-                  case 'PHPMAILER_METHOD_SENDMAIL':
-                     self::$emailSettings[$key] = self::PHPMAILER_METHOD_SENDMAIL;
-                  case 'PHPMAILER_METHOD_SMTP':
-                     self::$emailSettings[$key] = self::PHPMAILER_METHOD_SMTP;
-               }
-            } else {
-               self::$emailSettings[$key] = $val;
-            }
+            self::$emailSettings[$key] = $val;
          }
       }
 
@@ -358,19 +349,7 @@ class Constants {
       $emailSettings[] = '; --- cronjob (every Friday at 2:00 AM):  0 2 * * 5 php /var/www/html/codevtt/tools/send_timetrack_emails.php';
       $emailSettings[] = '; --- phpMailer_methods: PHPMAILER_METHOD_MAIL, PHPMAILER_METHOD_SENDMAIL, PHPMAILER_METHOD_SMTP';
       foreach (self::$emailSettings as $key => $val) {
-
-         if ('phpMailer_method' === $key) {
-            switch ($val) {
-               case self::PHPMAILER_METHOD_MAIL:
-                  $emailSettings[$key] = 'PHPMAILER_METHOD_MAIL';
-               case self::PHPMAILER_METHOD_SENDMAIL:
-                  $emailSettings[$key] = 'PHPMAILER_METHOD_SENDMAIL';
-               case self::PHPMAILER_METHOD_SMTP:
-                  $emailSettings[$key] = 'PHPMAILER_METHOD_SMTP';
-            }
-         } else {
-            $emailSettings[$key] = $val;
-         }
+         $emailSettings[$key] = $val;
       }
       
       $ini_array = array();
