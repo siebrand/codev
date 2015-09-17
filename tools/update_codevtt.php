@@ -290,6 +290,28 @@ function update_v12_to_v13() {
    return TRUE;
 }
 
+
+ /**
+ * update 1.0.3 to 1.0.4 (DB v13 to DB v14)
+  *
+  */
+ function update_v13_to_v14() {
+
+
+   $sqlScriptFilename = '../install/codevtt_update_v13_v14.sql';
+   if (!file_exists($sqlScriptFilename)) {
+      echo "<span class='error_font'>SQL script not found:$sqlScriptFilename</span><br/>";
+      exit;
+   }
+   // execute the SQL script
+   echo "- Execute SQL script: $sqlScriptFilename<br>";
+   $retCode = Tools::execSQLscript2($sqlScriptFilename);
+   if (0 != $retCode) {
+      echo "<span class='error_font'>Could not execSQLscript: $sqlScriptFilename</span><br/>";
+      exit;
+   }
+}
+
 // =========== MAIN ==========
 $logger = Logger::getLogger("versionUpdater");
 
