@@ -206,6 +206,7 @@ class IssueInfoController extends Controller {
       $tooltipAttr = array();
 
       if (NULL != $issue->getDeliveryDate()) {
+         $tooltipAttr[T_('Deadline')] = Tools::formatDate("%d %b %Y", $deadline);
          //$timeDriftSmarty["deliveryDate"] = Tools::formatDate("%d %b %Y", $issue->getDeliveryDate());
          $tooltipAttr[T_('DeliveryDate')] = Tools::formatDate("%d %b %Y", $issue->getDeliveryDate());
          $btImage='images/b_markAsRead.png';

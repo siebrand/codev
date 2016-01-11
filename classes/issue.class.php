@@ -1073,7 +1073,7 @@ class Issue extends Model implements Comparable {
     */
    public function getTimeDrift() {
       if (NULL != $this->getDeliveryDate() && NULL != $this->getDeadLine()) {
-         $timeDrift = $this->getDeliveryDate() - $this->getDeadLine();
+         $timeDrift =  $this->getDeadLine() - $this->getDeliveryDate();
 
          // convert seconds to days (24 * 60 * 60) = 86400
          $timeDrift /=  86400 ;
