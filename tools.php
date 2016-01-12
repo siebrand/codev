@@ -361,7 +361,7 @@ class Tools {
          $isoWeekStartDate = date('Y-m-d', strtotime(date('o-\\WW', $time)));
       */
 
-      $week -= 1;
+      // $week -= 1;
       $timestamp        = strtotime("1.1.$year + $week weeks");
       $isoWeekStartDate = strtotime(date('o-\\WW', $timestamp));
 
