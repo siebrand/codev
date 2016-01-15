@@ -27,6 +27,7 @@
         }
 
         this.availableLocales[locale] = messages;
+        this.setLocale(locale);
     };
 
     MyLocaleLib.prototype.addMessagesForLocale = function addMessagesForLocale (locale, messages) {
