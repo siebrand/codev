@@ -1,4 +1,6 @@
 <div id="content">
+   <script type="text/javascript" src="js_min/datepicker.min.js"></script>
+
    {if isset($projects)}
    <div class="center" style="margin-top: 2em">
       <form id="form1" name="form1" class="formWithTabsHistory" method="get" action="{$page}">
@@ -74,13 +76,15 @@
 
             <!-- General info -->
             <h3>{t}Time tracking{/t}</h3>
-            <div id="issueGeneralInfo">
+            <div id="issueGeneralInfo" style="margin-top:0.5em;">
                {include file="ajax/issueGeneralInfo.html"}
             </div>
 
             <div id="xxxx" style="margin-top:2em;">
-               <h3>{t}Task Info{/t}</h3>
-               <table class="center" >
+               <h3>
+                  <span id="updateTaskInfo_link" >{t}Task Info{/t} &nbsp;&nbsp;<img class="pointer" align="absmiddle" title="{t}Update task info{/t}" src="images/b_edit.png"/></span>
+               </h3>
+               <table class="center" style="margin-top:0.5em;">
                   <thead>
                      <tr>
                         <th>{t}External Ref{/t}</th>
@@ -210,7 +214,7 @@
       </div>
       {/if}
 
-         {if $isManager}
+      {if $isManager}
       <div id="formRemoveFromCmd_dialog" title="{t}Remove from Command{/t}" class="ui-helper-hidden">
          <p><span class="ui-icon ui-icon-alert float" style="margin-right: 7px;"></span>
             {t}Remove from :{/t} <span id="formRemoveFromCmd_cmdName">cmdName</span>
@@ -230,6 +234,74 @@
                <select class="cbCmdCandidates" name="cmdid" style="margin-left:1em;  width:400px;">
                </select>
                <input type="hidden" name="action" value="addToCmd" />
+               <input type="hidden" name="bugid"  value="{$issueGeneralInfo.issueId}" />
+            </fieldset>
+         </form>
+      </div>
+      <div id="formUpdateTaskInfo_dialog" title="{t}Update task info{/t}" class="ui-helper-hidden">
+         <form id="formAddToCmd" name="formUpdateTaskInfo" method="get" action="{$ajaxPage}" >
+            <fieldset>
+
+               <table class="invisible">
+                  <tbody>
+                     <tr>
+                        <th><label>{t}Task{/t} :</label></th>
+                        <td><label>{$issueGeneralInfo.issueId}</label></td>
+                        <td></td>
+                     </tr>
+                     <tr>
+                        <th><label for="extRef">{t}External Ref{/t} :</label></th>
+                        <td><input type="text" id="extRef" name="extRef" size="15" class="text" /></td>
+                        <td></td>
+                     </tr>
+                     <tr>
+                        <th><label for="handlerid">{t}Assigned to{/t} :</label></th>
+                        <td><select id="handlerid" name="handlerid"> </select></td>
+                        <td></td>
+                     </tr>
+                     <tr>
+                        <th><label for="status">{t}Status{/t} :</label></th>
+                        <td><select id="status" name="status"> </select></td>
+                        <td></td>
+                     </tr>
+                     <tr>
+                        <th><label for="codevttType">{t}Type{/t} :</label></th>
+                        <td><select id="codevttType" name="codevttType"> </select></td>
+                        <td></td>
+                     </tr>
+                     <tr>
+                        <th><label for="priority">{t}Priority{/t} :</label></th>
+                        <td><select id="priority" name="priority"> </select></td>
+                        <td></td>
+                     </tr>
+                     <tr>
+                        <th><label for="severity">{t}Severity{/t} :</label></th>
+                        <td><select id="severity" name="severity"> </select></td>
+                        <td></td>
+                     </tr>
+                     <tr>
+                        <th><label for="targetVersion">{t}Target{/t} :</label></th>
+                        <td><select id="targetVersion" name="targetVersion"> </select></td>
+                        <td></td>
+                     </tr>
+                     <tr>
+                        <th><label for="deadlineDatepicker">{t}Deadline{/t} :</label></th>
+                        <td>
+                           <input type="text"  class="datepicker" id="deadlineDatepicker" name="deadlineDatepicker" autocomplete="off" maxlength="10" size="10" />
+                        </td>
+                        <td></td>
+                     </tr>
+                     <tr>
+                        <th><label for="deliveryDatepicker">{t}Delivery date{/t} :</label></th>
+                        <td>
+                           <input type="text"  class="datepicker" id="deliveryDatepicker" name="deliveryDatepicker" autocomplete="off" maxlength="10" size="10" />
+                        </td>
+                        <td></td>
+                     </tr>
+                  </tbody>
+               </table>
+
+               <input type="hidden" name="action" value="updateTaskInfo" />
                <input type="hidden" name="bugid"  value="{$issueGeneralInfo.issueId}" />
             </fieldset>
          </form>
@@ -285,6 +357,37 @@
          var backlog = jQuery("#backlog"),
             allFields = jQuery([]).add(backlog),
             tips = jQuery("#validateTips");
+
+         // =================================================================
+         jQuery("#updateTaskInfo_link").click(function(e) {
+            e.preventDefault();
+            jQuery("#formUpdateTaskInfo_dialog").dialog("open");
+         });
+         jQuery("#formUpdateTaskInfo_dialog").dialog({
+            autoOpen: false,
+            resizable: true,
+            width: "auto",
+            modal: true,
+            buttons: {
+               "{t}Update{/t}": function() {
+                  jQuery("#formUpdateTaskInfo").submit();
+               },
+               "{t}Cancel{/t}": function() {
+                  jQuery(this).dialog("close");
+               }
+            }
+         });
+         jQuery("#formRemoveFromCmd").submit(function(event) {
+            event.preventDefault();
+            var form = jQuery(this);
+
+            // TODO Ajaxcall
+            
+            jQuery("#formUpdateTaskInfo_dialog").dialog("close");
+         });
+
+         // =================================================================
+
 
          jQuery("#formRemoveFromCmd_dialog").dialog({
             autoOpen: false,
